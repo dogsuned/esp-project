@@ -25,11 +25,13 @@ static const char *TAG = "nt3550-lvgl";
 #define LCD_BK_LIGHT_ON_LEVEL  1
 #define LCD_BK_LIGHT_OFF_LEVEL !LCD_BK_LIGHT_ON_LEVEL
 
-#define LCD_BK_LIGHT_GPIO (2)
+#define LCD_BK_LIGHT_GPIO (35)
 #define LCD_RST_GPIO      (-1)
-#define LCD_CS_GPIO       (4)
-#define LCD_DC_GPIO       (5)
-#define LCD_PCLK_GPIO     (18)
+#define LCD_CS_GPIO       (17)
+#define LCD_DC_GPIO       (47)
+#define LCD_PCLK_GPIO     (48)
+
+#define LCD_PWR_GPIO      (0)
 #define LCD_DATA0_GPIO    (1)
 #define LCD_DATA1_GPIO    (2)
 #define LCD_DATA2_GPIO    (3)
@@ -88,7 +90,7 @@ void app_main(void)
     static lv_disp_drv_t disp_drv;      // contains callback functions
     gpio_config_t bk_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << LCD_BK_LIGHT_GPIO
+        .pin_bit_mask = 1ULL << LCD_BK_LIGHT_GPIO | 1ULL << LCD_PWR_GPIO
     };
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
@@ -141,6 +143,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Turn off LCD backlight");
     ESP_ERROR_CHECK(gpio_config(&bk_gpio_config));
     gpio_set_level(LCD_BK_LIGHT_GPIO, LCD_BK_LIGHT_OFF_LEVEL);
+    gpio_set_level(LCD_PWR_GPIO, LCD_BK_LIGHT_OFF_LEVEL);
 
     ESP_LOGI(TAG, "Initialize Intel 8080 bus");
     ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
