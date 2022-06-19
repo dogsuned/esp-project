@@ -1,4 +1,4 @@
-file(GLOB_RECURSE IMAGE_SOURCES images/*.c)
+file(GLOB_RECURSE SOURCES *.c images/*.c)
 
-idf_component_register(SRCS "lvgl_example_main.c" "lvgl_demo_ui.c" ${IMAGE_SOURCES}
+idf_component_register(SRCS ${SOURCES}
                        INCLUDE_DIRS ".")

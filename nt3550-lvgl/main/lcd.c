@@ -1,9 +1,3 @@
-/*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
- *
- * SPDX-License-Identifier: CC0-1.0
- */
-
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -16,22 +10,18 @@
 #include "esp_log.h"
 #include "lvgl.h"
 
-static const char *TAG = "nt3550-lvgl";
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define LCD_PIXEL_CLOCK_HZ     (10 * 1000 * 1000)
-#define LCD_BK_LIGHT_ON_LEVEL  1
-#define LCD_BK_LIGHT_OFF_LEVEL !LCD_BK_LIGHT_ON_LEVEL
+#define LCD_GPIO_STATE_ON  1
+#define LCD_GPIO_STATE_OFF !LCD_GPIO_STATE_ON
 
+#define LCD_PWR_GPIO      (0)
 #define LCD_BK_LIGHT_GPIO (35)
 #define LCD_RST_GPIO      (-1)
 #define LCD_CS_GPIO       (17)
+#define LCD_RD_GPIO       (18)
 #define LCD_DC_GPIO       (47)
 #define LCD_PCLK_GPIO     (48)
 
-#define LCD_PWR_GPIO      (0)
 #define LCD_DATA0_GPIO    (1)
 #define LCD_DATA1_GPIO    (2)
 #define LCD_DATA2_GPIO    (3)
@@ -56,18 +46,19 @@ static const char *TAG = "nt3550-lvgl";
 #define LCD_CMD_BITS           16
 #define LCD_PARAM_BITS         16
 
-#define EXAMPLE_LVGL_TICK_PERIOD_MS    2
+#define LVGL_TICK_PERIOD_MS    2
 
+static const char *TAG = "lcd";
 extern void example_lvgl_demo_ui(lv_obj_t *scr);
 
-static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
+static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
     lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
     lv_disp_flush_ready(disp_driver);
     return false;
 }
 
-static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
+static void lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
 {
     esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
     int offsetx1 = area->x1;
@@ -78,19 +69,29 @@ static void example_lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
 }
 
-static void example_increase_lvgl_tick(void *arg)
+static void lvgl_tick_increase(void *arg)
 {
     /* Tell LVGL how many milliseconds has elapsed */
-    lv_tick_inc(EXAMPLE_LVGL_TICK_PERIOD_MS);
+    lv_tick_inc(LVGL_TICK_PERIOD_MS);
 }
 
-void app_main(void)
+static void lcd_task_handler(void *arg)
+{
+    while (1) {
+        // raise the task priority of LVGL and/or reduce the handler period can improve the performance
+        vTaskDelay(pdMS_TO_TICKS(10));
+        // The task running lv_timer_handler should have lower priority than that running `lv_tick_inc`
+        lv_timer_handler();
+    }
+}
+
+esp_err_t lcd_process_start(void)
 {
     static lv_disp_draw_buf_t disp_buf; // contains internal graphic buffer(s) called draw buffer(s)
     static lv_disp_drv_t disp_drv;      // contains callback functions
     gpio_config_t bk_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1ULL << LCD_BK_LIGHT_GPIO | 1ULL << LCD_PWR_GPIO
+        .pin_bit_mask = 1ULL << LCD_BK_LIGHT_GPIO | 1ULL << LCD_PWR_GPIO | 1ULL << LCD_RD_GPIO
     };
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
@@ -128,7 +129,7 @@ void app_main(void)
             .dc_dummy_level = 0,
             .dc_data_level = 1,
         },
-        .on_color_trans_done = example_notify_lvgl_flush_ready,
+        .on_color_trans_done = notify_lvgl_flush_ready,
         .user_ctx = &disp_drv,
         .lcd_cmd_bits = LCD_CMD_BITS,
         .lcd_param_bits = LCD_PARAM_BITS,
@@ -142,8 +143,9 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Turn off LCD backlight");
     ESP_ERROR_CHECK(gpio_config(&bk_gpio_config));
-    gpio_set_level(LCD_BK_LIGHT_GPIO, LCD_BK_LIGHT_OFF_LEVEL);
-    gpio_set_level(LCD_PWR_GPIO, LCD_BK_LIGHT_OFF_LEVEL);
+    gpio_set_level(LCD_BK_LIGHT_GPIO, LCD_GPIO_STATE_OFF);
+    gpio_set_level(LCD_PWR_GPIO, LCD_GPIO_STATE_OFF);
+    gpio_set_level(LCD_RD_GPIO, LCD_GPIO_STATE_ON);
 
     ESP_LOGI(TAG, "Initialize Intel 8080 bus");
     ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
@@ -156,10 +158,10 @@ void app_main(void)
     esp_lcd_panel_init(panel_handle);
     esp_lcd_panel_invert_color(panel_handle, true);
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
-    esp_lcd_panel_set_gap(panel_handle, 0, 20);
+    esp_lcd_panel_set_gap(panel_handle, 0, 0);
 
     ESP_LOGI(TAG, "Turn on LCD backlight");
-    gpio_set_level(LCD_BK_LIGHT_GPIO, LCD_BK_LIGHT_ON_LEVEL);
+    gpio_set_level(LCD_BK_LIGHT_GPIO, LCD_GPIO_STATE_ON);
 
     ESP_LOGI(TAG, "Initialize LVGL library");
     lv_init();
@@ -176,7 +178,7 @@ void app_main(void)
     lv_disp_drv_init(&disp_drv);
     disp_drv.hor_res = LCD_H_RES;
     disp_drv.ver_res = LCD_V_RES;
-    disp_drv.flush_cb = example_lvgl_flush_cb;
+    disp_drv.flush_cb = lvgl_flush_cb;
     disp_drv.draw_buf = &disp_buf;
     disp_drv.user_data = panel_handle;
     lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
@@ -184,21 +186,17 @@ void app_main(void)
     ESP_LOGI(TAG, "Install LVGL tick timer");
     // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
     const esp_timer_create_args_t lvgl_tick_timer_args = {
-        .callback = &example_increase_lvgl_tick,
+        .callback = &lvgl_tick_increase,
         .name = "lvgl_tick"
     };
     esp_timer_handle_t lvgl_tick_timer = NULL;
     ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, EXAMPLE_LVGL_TICK_PERIOD_MS * 1000));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, LVGL_TICK_PERIOD_MS * 1000));
 
     ESP_LOGI(TAG, "Display LVGL animation");
     lv_obj_t *scr = lv_disp_get_scr_act(disp);
     example_lvgl_demo_ui(scr);
 
-    while (1) {
-        // raise the task priority of LVGL and/or reduce the handler period can improve the performance
-        vTaskDelay(pdMS_TO_TICKS(10));
-        // The task running lv_timer_handler should have lower priority than that running `lv_tick_inc`
-        lv_timer_handler();
-    }
+    xTaskCreate(lcd_task_handler, "lcd_task_handler", 4096, NULL, 6, NULL);
+    return ESP_OK;
 }
