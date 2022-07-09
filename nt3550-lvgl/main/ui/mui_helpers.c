@@ -3,7 +3,7 @@
 // LVGL VERSION: 8.2
 // PROJECT: SquareLine_Project
 
-#include "ui_helpers.h"
+#include "mui_helpers.h"
 
 void _ui_bar_set_property(lv_obj_t * target, int id, int val)
 {
@@ -131,12 +131,12 @@ void _ui_anim_callback_set_image_angle(lv_anim_t * a, int32_t v)
 
 int32_t _ui_anim_callback_get_x(lv_anim_t * a)
 {
-    return lv_obj_get_x_aligned((lv_obj_t *)a->user_data);
+    return lv_obj_get_x((lv_obj_t *)a->user_data);
 }
 
 int32_t _ui_anim_callback_get_y(lv_anim_t * a)
 {
-    return lv_obj_get_y_aligned((lv_obj_t *)a->user_data);
+    return lv_obj_get_y((lv_obj_t *)a->user_data);
 }
 
 int32_t _ui_anim_callback_get_width(lv_anim_t * a)

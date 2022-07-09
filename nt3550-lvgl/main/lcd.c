@@ -9,6 +9,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "lvgl.h"
+#include "mui.h"
 
 #define LCD_PIXEL_CLOCK_HZ     (10 * 1000 * 1000)
 #define LCD_GPIO_STATE_ON  1
@@ -194,8 +195,9 @@ esp_err_t lcd_process_start(void)
     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, LVGL_TICK_PERIOD_MS * 1000));
 
     ESP_LOGI(TAG, "Display LVGL animation");
-    lv_obj_t *scr = lv_disp_get_scr_act(disp);
-    example_lvgl_demo_ui(scr);
+    // lv_obj_t *scr = lv_disp_get_scr_act(disp);
+    // example_lvgl_demo_ui(scr);
+    ui_init();
 
     xTaskCreate(lcd_task_handler, "lcd_task_handler", 4096, NULL, 6, NULL);
     return ESP_OK;

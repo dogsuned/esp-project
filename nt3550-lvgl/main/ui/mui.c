@@ -3,8 +3,8 @@
 // LVGL VERSION: 8.2
 // PROJECT: SquareLine_Project
 
-#include "ui.h"
-#include "ui_helpers.h"
+#include "mui.h"
+#include "mui_helpers.h"
 
 ///////////////////// VARIABLES ////////////////////
 lv_obj_t * ui_Screen1;
@@ -74,7 +74,8 @@ void ui_Screen1_screen_init(void)
 
     lv_obj_set_align(ui_TextHW, LV_ALIGN_CENTER);
 
-    if("" == "") lv_textarea_set_accepted_chars(ui_TextHW, NULL);
+    // if("" == "") lv_textarea_set_accepted_chars(ui_TextHW, NULL);
+    if(1) lv_textarea_set_accepted_chars(ui_TextHW, NULL);
     else lv_textarea_set_accepted_chars(ui_TextHW, "");
 
     lv_textarea_set_text(ui_TextHW, "Hello World!\n2022/06/28");
@@ -109,7 +110,8 @@ void ui_Screen1_screen_init(void)
 
     lv_obj_set_align(ui_TextArea2, LV_ALIGN_CENTER);
 
-    if("" == "") lv_textarea_set_accepted_chars(ui_TextArea2, NULL);
+    // if("" == "") lv_textarea_set_accepted_chars(ui_TextArea2, NULL);
+    if(1) lv_textarea_set_accepted_chars(ui_TextArea2, NULL);
     else lv_textarea_set_accepted_chars(ui_TextArea2, "");
 
     lv_textarea_set_text(ui_TextArea2, "My name is Allen");
