@@ -9,7 +9,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "lvgl.h"
-#include "mui.h"
+#include "ui.h"
 
 #define LCD_PIXEL_CLOCK_HZ     (10 * 1000 * 1000)
 #define LCD_GPIO_STATE_ON  1
