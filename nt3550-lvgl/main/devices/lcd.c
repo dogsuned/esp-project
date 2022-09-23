@@ -11,7 +11,7 @@
 #include "lvgl.h"
 #include "ui.h"
 
-#define LCD_PIXEL_CLOCK_HZ     (10 * 1000 * 1000)
+#define LCD_PIXEL_CLOCK_HZ     (20 * 1000 * 1000)
 #define LCD_GPIO_STATE_ON  1
 #define LCD_GPIO_STATE_OFF !LCD_GPIO_STATE_ON
 
@@ -121,7 +121,7 @@ esp_err_t lcd_process_start(void)
     };
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_i80_config_t io_config = {
-        .cs_gpio_num = LCD_CS_GPIO,
+        .cs_gpio_num = -1,
         .pclk_hz = LCD_PIXEL_CLOCK_HZ,
         .trans_queue_depth = 10,
         .dc_levels = {
@@ -147,6 +147,7 @@ esp_err_t lcd_process_start(void)
     gpio_set_level(LCD_BK_LIGHT_GPIO, LCD_GPIO_STATE_OFF);
     gpio_set_level(LCD_PWR_GPIO, LCD_GPIO_STATE_OFF);
     gpio_set_level(LCD_RD_GPIO, LCD_GPIO_STATE_ON);
+    gpio_set_level(LCD_CS_GPIO, LCD_GPIO_STATE_ON);
 
     ESP_LOGI(TAG, "Initialize Intel 8080 bus");
     ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
@@ -157,7 +158,7 @@ esp_err_t lcd_process_start(void)
 
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
-    esp_lcd_panel_invert_color(panel_handle, true);
+    esp_lcd_panel_invert_color(panel_handle, false);
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
     esp_lcd_panel_set_gap(panel_handle, 0, 0);
 
@@ -168,9 +169,9 @@ esp_err_t lcd_process_start(void)
     lv_init();
     // alloc draw buffers used by LVGL
     // it's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
-    lv_color_t *buf1 = heap_caps_malloc(LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    lv_color_t *buf1 = heap_caps_malloc(LCD_H_RES * 40 * sizeof(lv_color_t), MALLOC_CAP_DMA);
     assert(buf1);
-    lv_color_t *buf2 = heap_caps_malloc(LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    lv_color_t *buf2 = heap_caps_malloc(LCD_H_RES * 40 * sizeof(lv_color_t), MALLOC_CAP_DMA);
     assert(buf2);
     // initialize LVGL draw buffers
     lv_disp_draw_buf_init(&disp_buf, buf1, buf2, LCD_H_RES * 20);
@@ -182,6 +183,8 @@ esp_err_t lcd_process_start(void)
     disp_drv.flush_cb = lvgl_flush_cb;
     disp_drv.draw_buf = &disp_buf;
     disp_drv.user_data = panel_handle;
+    disp_drv.sw_rotate = 1;
+    disp_drv.rotated = LV_DISP_ROT_90;
     lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
 
     ESP_LOGI(TAG, "Install LVGL tick timer");
@@ -199,6 +202,6 @@ esp_err_t lcd_process_start(void)
     // example_lvgl_demo_ui(scr);
     ui_init();
 
-    xTaskCreate(lcd_task_handler, "lcd_task_handler", 4096, NULL, 6, NULL);
+    xTaskCreate(lcd_task_handler, "lcd_task_handler", 8 * 1024, NULL, tskIDLE_PRIORITY, NULL);
     return ESP_OK;
 }

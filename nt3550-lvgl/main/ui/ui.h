@@ -26,7 +26,7 @@ void show_keyboard_Animation(lv_obj_t * TargetObject, int delay);
 void hide_keyboard_Animation(lv_obj_t * TargetObject, int delay);
 void show_calendar_Animation(lv_obj_t * TargetObject, int delay);
 void hide_calendar_Animation(lv_obj_t * TargetObject, int delay);
-void ui_event_scmain(lv_event_t * e);
+void ui_event_handler(lv_event_t * e);
 extern lv_obj_t * ui_scmain;
 extern lv_obj_t * ui_Calendar;
 extern lv_obj_t * ui_lbtitle;
