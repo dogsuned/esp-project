@@ -11,8 +11,18 @@
 #include "esp_log.h"
 #include "lcd.h"
 #include "key.h"
+#include "ui.h"
 
 static const char *TAG = "main";
+
+void app_key_handler(key_type_e key, key_evt_e evt)
+{
+    lv_event_t event;
+
+    ESP_LOGI(TAG, "key event: %d\n", evt);
+    event.user_data = (void *)key;
+    ui_event_scmain(&event);
+}
 
 void app_main(void)
 {
@@ -27,6 +37,11 @@ void app_main(void)
     if (retval) {
         ESP_LOGE(TAG, "lcd_process_start failed: %d\n", retval);
     }
+
+    key_func_register(KEY_0, app_key_handler);
+    key_func_register(KEY_1, app_key_handler);
+    key_func_register(KEY_2, app_key_handler);
+    key_func_register(KEY_3, app_key_handler);
 
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(10000));

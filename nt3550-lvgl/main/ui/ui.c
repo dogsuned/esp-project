@@ -102,19 +102,26 @@ void hide_calendar_Animation(lv_obj_t * TargetObject, int delay)
 ///////////////////// FUNCTIONS ////////////////////
 void ui_event_scmain(lv_event_t * e)
 {
+    uint32_t idx;
     lv_event_code_t event_code = lv_event_get_code(e);
     lv_obj_t * target = lv_event_get_target(e);
-    if(event_code == LV_EVENT_CLICKED) {
-        show_keyboard_Animation(ui_scmain, 0);
-    }
-    if(event_code == LV_EVENT_CLICKED) {
-        hide_keyboard_Animation(ui_scmain, 0);
-    }
-    if(event_code == LV_EVENT_CLICKED) {
-        show_calendar_Animation(ui_scmain, 0);
-    }
-    if(event_code == LV_EVENT_CLICKED) {
-        hide_calendar_Animation(ui_scmain, 0);
+
+    idx = (uint32_t)(e->user_data);
+    switch (idx) {
+        case 0:
+            show_keyboard_Animation(ui_scmain, 0);
+            break;
+        case 1:
+            hide_keyboard_Animation(ui_scmain, 0);
+            break;
+        case 2:
+            show_calendar_Animation(ui_scmain, 0);
+            break;
+        case 3:
+            hide_calendar_Animation(ui_scmain, 0);
+            break;
+        default:
+            break;
     }
 }
 
