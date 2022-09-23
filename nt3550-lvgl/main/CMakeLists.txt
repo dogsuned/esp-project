@@ -1,4 +1,4 @@
-file(GLOB_RECURSE SOURCES *.c images/*.c ui/*.c)
+file(GLOB_RECURSE SOURCES *.c images/*.c ui/*.c devices/*.c)
 
 idf_component_register(SRCS ${SOURCES}
-                       INCLUDE_DIRS "." "ui/")
+                       INCLUDE_DIRS "." "ui/" "devices/")
