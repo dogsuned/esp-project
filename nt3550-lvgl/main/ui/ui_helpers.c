@@ -1,7 +1,7 @@
 // SquareLine LVGL GENERATED FILE
-// EDITOR VERSION: SquareLine Studio 1.0.5
+// EDITOR VERSION: SquareLine Studio 1.1.0
 // LVGL VERSION: 8.2
-// PROJECT: POS
+// PROJECT: weather
 
 #include "ui_helpers.h"
 
@@ -54,19 +54,22 @@ void _ui_screen_change(lv_obj_t * target, lv_scr_load_anim_t fademode, int spd, 
     lv_scr_load_anim(target, fademode, spd, delay, false);
 }
 
-void _ui_arc_increment(lv_obj_t * target, lv_scr_load_anim_t fademode, int spd, int delay)
+void _ui_arc_increment(lv_obj_t * target, int val)
 {
-    lv_scr_load_anim(target, fademode, spd, delay, false);
+    int old = lv_arc_get_value(target);
+    lv_arc_set_value(target, old + val);
 }
 
-void _ui_bar_increment(lv_obj_t * target, lv_scr_load_anim_t fademode, int spd, int delay)
+void _ui_bar_increment(lv_obj_t * target, int val, int anm)
 {
-    lv_scr_load_anim(target, fademode, spd, delay, false);
+    int old = lv_bar_get_value(target);
+    lv_bar_set_value(target, old + val, anm);
 }
 
-void _ui_slider_increment(lv_obj_t * target, lv_scr_load_anim_t fademode, int spd, int delay)
+void _ui_slider_increment(lv_obj_t * target, int val, int anm)
 {
-    lv_scr_load_anim(target, fademode, spd, delay, false);
+    int old = lv_slider_get_value(target);
+    lv_slider_set_value(target, old + val, anm);
 }
 
 void _ui_flag_modify(lv_obj_t * target, int32_t flag, int value)
